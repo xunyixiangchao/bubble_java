@@ -54,6 +54,13 @@ public class Item {
 		currentPosition = circleBody.getPhysicalBody().getPosition();
 	}
 
+	public float getX() {
+		return  x = circleBody.getPhysicalBody().getPosition().x;
+	}
+	public float getY() {
+		return  y = circleBody.getPhysicalBody().getPosition().y;
+	}
+	public float getRadius(){return  radius= circleBody.radius;}
 	private int texture, imageTexture = 0;
 
 	public void bindTextures(int[] ints, int index) {
@@ -69,7 +76,7 @@ public class Item {
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		GLUtils.texImage2D(GL_TEXTURE_2D, 0, bitmap, 0);
-		//bitmap.recycle();
+		bitmap.recycle();
 		glBindTexture(GL_TEXTURE_2D, 0);
 		return textureIds[index];
 	}

@@ -7,18 +7,15 @@ import android.view.View;
 import com.lis.bubble_java.BubblePickerListener;
 import com.lis.bubble_java.model.Color;
 import com.lis.bubble_java.model.PickerItem;
-import com.lis.bubble_java.physics.Border;
 import com.lis.bubble_java.physics.CircleBody;
 
 import org.jbox2d.common.Vec2;
-import org.jbox2d.dynamics.World;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
@@ -55,12 +52,12 @@ public class PickerRenderer implements GLSurfaceView.Renderer {
 	BubblePickerListener listener;
 	ArrayList<PickerItem> items = new ArrayList<>();
 	int bubbleSize;
-
+	Engine engine = new Engine();
 	private ArrayList<Item> circles = new ArrayList<Item>();
 
 	public List<PickerItem> getSelectedItems() {
 		for (Item item : circles) {
-			if (item.circleBody == Engine.getSelectedBodies()) {
+			if (item.circleBody == engine.getSelectedBodies()) {
 				selectedItems.add(item.pickerItem);
 			}
 		}
@@ -70,7 +67,7 @@ public class PickerRenderer implements GLSurfaceView.Renderer {
 	public List<PickerItem> selectedItems = new ArrayList<>();
 
 	public void setMaxSelectedCount(int maxSelectedCount) {
-		Engine.maxSelectedCount = maxSelectedCount;
+		engine.maxSelectedCount = maxSelectedCount;
 	}
 
 
@@ -99,7 +96,7 @@ public class PickerRenderer implements GLSurfaceView.Renderer {
 	@Override
 	public void onDrawFrame(GL10 gl) {
 		calculateVertices();
-		Engine.move();
+		engine.move();
 		drawFrame();
 
 	}
@@ -179,7 +176,7 @@ public class PickerRenderer implements GLSurfaceView.Renderer {
 
 	private void initialize() {
 		clear();
-		List<CircleBody> circleBodys = Engine.build(items.size(), getScaleX(), getScaleY());
+		List<CircleBody> circleBodys = engine.build(items.size(), getScaleX(), getScaleY());
 		for (int i = 0; i < circleBodys.size(); i++) {
 			circles.add(new Item(items.get(i), circleBodys.get(i)));
 		}
@@ -187,7 +184,7 @@ public class PickerRenderer implements GLSurfaceView.Renderer {
 			if (p.isSelected) {
 				for (Item item : circles) {
 					if (item.pickerItem == p) {
-						Engine.resize(item);
+						engine.resize(item);
 						break;
 					}
 				}
@@ -225,7 +222,8 @@ public class PickerRenderer implements GLSurfaceView.Renderer {
 	}
 
 	private void initializeVertices(Item body, int index) {
-		float radius = body.radius;
+		//这块的radius其实是circleBody中的radius，这里一定要取最新的radius.
+		float radius = body.getRadius();
 		float radiusX = radius * getScaleX();
 		float radiusY = radius * getScaleY();
 		int size = index * 8;
@@ -242,14 +240,14 @@ public class PickerRenderer implements GLSurfaceView.Renderer {
 
 	public void clear() {
 		circles.clear();
-		Engine.clear();
+		engine.clear();
 	}
 
 
 	public void resize(float x, float y) {
 		Item item = getItem(new Vec2(x, glView.getHeight() - y));
 		if (item != null) {
-			if (Engine.resize(item)) {
+			if (engine.resize(item)) {
 				if (listener != null) {
 					if (item.circleBody.increased) {
 						listener.onBubbleDeselected(item.pickerItem);
@@ -278,8 +276,7 @@ public class PickerRenderer implements GLSurfaceView.Renderer {
 	}
 
 	public void swipe(float x, float y) {
-
-		Engine.swipe(convertValue(x / glView.getWidth(), getScaleX()),
+		engine.swipe(convertValue(x / glView.getWidth(), getScaleX()),
 				convertValue(y / glView.getHeight(), getScaleY()), getScaleY());
 	}
 
@@ -287,11 +284,16 @@ public class PickerRenderer implements GLSurfaceView.Renderer {
 		return (2f * x / y);
 	}
 
+	public float convertPoint(float x, float y) {
+		return (2f * x - 1f) / y;
+	}
+
 	private Item getItem(Vec2 position) {
-		float x = convertValue(position.x / glView.getWidth() - 1f, getScaleX());
-		float y = convertValue(position.y / glView.getHeight() - 1f, getScaleY());
+		float x = convertPoint(position.x / glView.getWidth(), getScaleX());
+		float y = convertPoint(position.y / glView.getHeight(), getScaleY());
 		for (Item item : circles) {
-			if ((Math.sqrt(Math.pow(x - item.x, 2)) + Math.pow(y - item.y, 2)) <= item.radius) {
+			if ((Math.sqrt(Math.pow(x - item.getX(), 2) + Math.pow(y - item.getY(), 2))) <=
+			    item.radius) {
 				return item;
 			}
 		}
@@ -299,158 +301,12 @@ public class PickerRenderer implements GLSurfaceView.Renderer {
 	}
 
 	public void release() {
-		Engine.release();
+		engine.release();
 	}
 
 	public void setBubbleSize(int bubbleSize) {
 		this.bubbleSize = bubbleSize;
-		Engine.setRadius(bubbleSize);
+		engine.setRadius(bubbleSize);
 	}
 
-
-	public static class Engine {
-		public static int maxSelectedCount;
-		private static ArrayList<CircleBody> bodies = new ArrayList();
-		private static ArrayList<Item> toBeResized = new ArrayList<Item>();
-		private static Vec2 gravityCenter = new Vec2(0f, 0f);
-		private static boolean touch = false;
-		private static float increasedGravity = 55f;
-		private static float standardIncreasedGravity = interpolate(500f, 800f, 0.5f);
-		private static ArrayList<Border> borders = new ArrayList();
-		private static World world = new World(new Vec2(0f, 0f), false);
-		static int radius = 50;
-
-		private static float interpolate(float start, float end, float f) {
-			return start + f * (end - start);
-		}
-
-		public static List<CircleBody> getSelectedBodies() {
-			for (CircleBody cBody : bodies) {
-				if (cBody.increased || cBody.toBeIncreased || cBody.isIncreasing) {
-					selectedBodies.add(cBody);
-				}
-			}
-			return selectedBodies;
-		}
-
-		static boolean resize(Item item) {
-			if (selectedBodies.size() >= maxSelectedCount && !item.circleBody.increased) {
-				return false;
-			}
-
-			if (item.circleBody.isBusy()) {
-				return false;
-			}
-
-			item.circleBody.defineState();
-
-			toBeResized.add(item);
-			return true;
-		}
-
-		//List<PickerItem> selectedBodies;
-		static List<CircleBody> selectedBodies = new ArrayList<>();
-
-		public static boolean resize(PickerRenderer pickerRenderer) {
-			return false;
-		}
-
-		private static void release() {
-			gravityCenter.setZero();
-			touch = false;
-			increasedGravity = standardIncreasedGravity;
-		}
-
-		public static void swipe(float x, float y, float scaleY) {
-			if (Math.abs(gravityCenter.x) < 2) {
-				gravityCenter.x += -x;
-			}
-			if (Math.abs(gravityCenter.y) < 0.5f / scaleY) {gravityCenter.y += y;}
-			increasedGravity = standardIncreasedGravity * Math.abs(x * 13) * Math.abs(y * 13);
-			touch = true;
-
-		}
-
-		public static void clear() {
-			for (Border border : borders) {
-				world.destroyBody(border.itemBody);
-			}
-			for (CircleBody circle : bodies) {
-				world.destroyBody(circle.physicalBody);
-			}
-			borders.clear();
-			bodies.clear();
-		}
-
-		private static float scaleX = 0f;
-		private static float scaleY = 0f;
-
-		public static List<CircleBody> build(int size, float getScaleX, float getScaleY) {
-			float density = interpolate(0.8f, 0.2f, radius / 100f);
-			for (int i = 0; i < size; i++) {
-				float x = new Random().nextInt(2) % 2 == 0 ? -2.2f : 2.2f;
-				float y =
-						new Random().nextInt(2) % 2 == 0 ? (-0.5f / getScaleY) : (0.5f / getScaleY);
-				bodies.add(new CircleBody(world, new Vec2(x, y),
-						                         bubbleRadius * getScaleX,
-						                         (bubbleRadius * getScaleX) * 1.3f, density));
-			}
-			getSelectedBodies();
-			scaleX = getScaleX;
-			scaleY = getScaleY;
-			createBorders();
-
-			return bodies;
-
-		}
-
-		private static void createBorders() {
-			borders.add(new Border(world, new Vec2(0f, 0.5f / scaleY), Border.HORIZONTAL));
-			borders.add(new Border(world, new Vec2(0f, -0.5f / scaleY), Border.HORIZONTAL));
-		}
-
-		private static float bubbleRadius = 0.17f;
-		private static float gravity = 6f;
-
-		public static void setRadius(int radius) {
-			Engine.radius = radius;
-			bubbleRadius = interpolate(0.1f, 0.25f, radius / 100f);
-			gravity = interpolate(20f, 80f, radius / 100f);
-			standardIncreasedGravity = interpolate(500f, 800f, radius / 100f);
-		}
-
-		private static float resizeStep = 0.005f;
-		private static float step = 0.0005f;
-
-		public static void move() {
-			for (Item item : toBeResized) {
-				item.circleBody.resize(resizeStep);
-			}
-
-			world.step(step, 11, 11);
-			for (CircleBody circle : bodies) {
-				move(circle);
-			}
-			for (Item item : toBeResized) {
-				if (item.circleBody.getFinished()) {
-					toBeResized.remove(item);
-				}
-			}
-		}
-
-		static float getCurrentGravity() {
-			return touch ? increasedGravity : gravity;
-		}
-
-		public static void move(CircleBody body) {
-			Vec2 direction = gravityCenter.sub(body.physicalBody.getPosition());
-			float distance = direction.length();
-			float gravity = body.increased ? 1.3f * getCurrentGravity() : getCurrentGravity();
-			if (distance > step * 200) {
-				body.physicalBody.applyForce(direction.mul(
-						gravity / (distance * distance)), body.physicalBody.getPosition());
-			}
-		}
-
-	}
 }

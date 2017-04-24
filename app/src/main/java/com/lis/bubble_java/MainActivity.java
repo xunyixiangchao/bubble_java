@@ -29,27 +29,27 @@ public class MainActivity extends AppCompatActivity {
 		TypedArray images = getResources().obtainTypedArray(R.array.images);
 
 		ArrayList<PickerItem> items = new ArrayList<>();
-		for (int i = 0; i < titles.length; i++) {
+		for (int i = 0; i <1; i++) {
 			items.add(new PickerItem(titles[i], null, true, 0, new BubbleGradient(colors.getColor(
 					(i * 2) % 8, 0), colors.getColor((i * 2) % 8 + 1, 0), BubbleGradient.VERTICAL),
 					                               0.5f, Typeface.DEFAULT, ContextCompat.getColor(this, android.R.color.white), 40f,
 					                               ContextCompat.getDrawable(this, images.getResourceId(i, 0)), false));
 		}
 		picker.setItems(items);
-		//colors.recycle();
-		//images.recycle();
+		colors.recycle();
+		images.recycle();
 		picker.setBubbleSize(20);
 		picker.setListener(new BubblePickerListener() {
 			@Override
 			public void onBubbleSelected(PickerItem item) {
 				Toast.makeText(MainActivity.this,
-						item.title + "selected", Toast.LENGTH_SHORT).show();
+						item.title + " selected", Toast.LENGTH_SHORT).show();
 			}
 
 			@Override
 			public void onBubbleDeselected(PickerItem item) {
 				Toast.makeText(MainActivity.this,
-						item.title + "deselected", Toast.LENGTH_SHORT).show();
+						item.title + " deselected", Toast.LENGTH_SHORT).show();
 			}
 		});
 

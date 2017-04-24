@@ -113,7 +113,7 @@ public class BubblePicker extends GLSurfaceView {
 				}
 				break;
 		}
-		release();
+		//release();
 		return true;
 	}
 

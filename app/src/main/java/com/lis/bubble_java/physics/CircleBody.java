@@ -18,13 +18,14 @@ public class CircleBody {
 	public Float radius;
 	Float increasedRadius;
 	Float density;
-
+	Float decreasedRadius = radius;
 	public CircleBody(World world, Vec2 position, Float radius, Float increasedRadius, Float density) {
 		this.world = world;
 		this.density = density;
 		this.position = position;
 		this.radius = radius;
 		this.increasedRadius = increasedRadius;
+		decreasedRadius = radius;
 		init();
 	}
 
@@ -91,7 +92,7 @@ public class CircleBody {
 		}
 	}
 
-	Float decreasedRadius = radius;
+
 
 	private void decrease(Float step) {
 		isDecreasing = true;
