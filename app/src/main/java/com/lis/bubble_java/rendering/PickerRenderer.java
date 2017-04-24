@@ -160,10 +160,11 @@ public class PickerRenderer implements GLSurfaceView.Renderer {
 	}
 
 	private int createProgram(int vertexShader, int fragmentShader) {
-		glAttachShader(glCreateProgram(), vertexShader);
-		glAttachShader(glCreateProgram(), fragmentShader);
-		glLinkProgram(glCreateProgram());
-		return vertexShader;
+		int mCreateProgram = glCreateProgram();
+		glAttachShader(mCreateProgram, vertexShader);
+		glAttachShader(mCreateProgram, fragmentShader);
+		glLinkProgram(mCreateProgram);
+		return mCreateProgram;
 	}
 
 	private int createShader(int type, String shader) {
@@ -287,10 +288,7 @@ public class PickerRenderer implements GLSurfaceView.Renderer {
 	}
 
 	private Item getItem(Vec2 position) {
-		// TODO: 2017/4/19 不知道是不是正确
 		float x = convertValue(position.x / glView.getWidth() - 1f, getScaleX());
-		//float x = position.x.convertPoint(glView.getWidth(), getScaleX());
-		//float y = position.y.convertPoint(glView.getHeight(), getScaleY());
 		float y = convertValue(position.y / glView.getHeight() - 1f, getScaleY());
 		for (Item item : circles) {
 			if ((Math.sqrt(Math.pow(x - item.x, 2)) + Math.pow(y - item.y, 2)) <= item.radius) {
@@ -298,8 +296,6 @@ public class PickerRenderer implements GLSurfaceView.Renderer {
 			}
 		}
 		return null;
-		//circles.find { Math.sqrt(((x - position.x).sqr() + (y - position.y).sqr()).toDouble()) <= position.radius }
-
 	}
 
 	public void release() {
