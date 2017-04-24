@@ -29,7 +29,7 @@ public class MainActivity extends AppCompatActivity {
 		TypedArray images = getResources().obtainTypedArray(R.array.images);
 
 		ArrayList<PickerItem> items = new ArrayList<>();
-		for (int i = 0; i <1; i++) {
+		for (int i = 0; i <titles.length; i++) {
 			items.add(new PickerItem(titles[i], null, true, 0, new BubbleGradient(colors.getColor(
 					(i * 2) % 8, 0), colors.getColor((i * 2) % 8 + 1, 0), BubbleGradient.VERTICAL),
 					                               0.5f, Typeface.DEFAULT, ContextCompat.getColor(this, android.R.color.white), 40f,
