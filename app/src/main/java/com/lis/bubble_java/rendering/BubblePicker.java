@@ -34,6 +34,10 @@ public class BubblePicker extends GLSurfaceView {
 		return renderer.getSelectedItems();
 	}
 
+	/**
+	 * set the radius of the circle
+	 * @param bubbleSize
+	 */
 	public void setBubbleSize(int bubbleSize) {
 		this.bubbleSize = bubbleSize;
 		if (0 < bubbleSize && bubbleSize < 101) {
@@ -42,11 +46,19 @@ public class BubblePicker extends GLSurfaceView {
 	}
 
 
+	/**
+	 * set the background of bubble
+	 * @param background
+	 */
 	public void setBackground(int background) {
 		this.background = background;
 		renderer.backgroundColor = new Color(background);
 	}
 
+	/**
+	 * set the data
+	 * @param items
+	 */
 	public void setItems(ArrayList<PickerItem> items) {
 		if (items != null) {
 			this.items = items;
@@ -56,10 +68,18 @@ public class BubblePicker extends GLSurfaceView {
 		renderer.items = this.items;
 	}
 
+	/**
+	 * set the maximum number that can be selected
+	 * @param maxSelectedCount
+	 */
 	public void setMaxSelectedCount(int maxSelectedCount) {
 		renderer.setMaxSelectedCount(maxSelectedCount);
 	}
 
+	/**
+	 * set up listening for events
+	 * @param listener
+	 */
 	public void setListener(BubblePickerListener listener) {
 		renderer.listener = listener;
 	}
@@ -113,7 +133,6 @@ public class BubblePicker extends GLSurfaceView {
 				}
 				break;
 		}
-		//release();
 		return true;
 	}
 
